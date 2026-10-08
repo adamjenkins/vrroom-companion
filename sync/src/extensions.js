@@ -14,8 +14,8 @@ export const ROUTE_PREFIX = '/v1/ext/';
 /** Extension names. */
 const NAME = /^[a-z][a-z0-9_-]{0,31}$/;
 
-/** Route sub-paths. */
-const SUBPATH = /^[A-Za-z0-9._~-]+(?:\/[A-Za-z0-9._~-]+)*$/;
+/** Route sub-paths: unreserved characters in '/'-separated segments, no '.' or '..' segment. */
+const SUBPATH = /^(?!\.{1,2}(?:\/|$))[A-Za-z0-9._~-]+(?:\/(?!\.{1,2}(?:\/|$))[A-Za-z0-9._~-]+)*$/;
 
 /**
  * An invalid extension. `extension` is the extension name or the module's file name.

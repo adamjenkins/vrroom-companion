@@ -77,7 +77,9 @@ needs them will get a dedicated, rate-limited hook in Phase 5.
 ### Routes
 
 `GET`/`POST`/… `/v1/ext/<name>/<subpath>` is passed to `routes[<subpath>]` of the extension called
-`<name>`; an unknown name or sub-path answers 404 `{"error":"notfound"}`. A handler that throws
+`<name>`; an unknown name or sub-path answers 404 `{"error":"notfound"}`. A sub-path is one or
+more `/`-separated segments of letters, digits and `._~-`; `.` and `..` segments are refused at
+registration. A handler that throws
 or rejects answers 500 `{"error":"internal"}` when nothing has been sent yet. Handlers must do
 their own authentication — for example verify a Moodle-signed JWT with `src/jwt.js` — because the
 reverse proxy forwards `/v1/` to `mavr-sync` (see `proxy/` in the stack).

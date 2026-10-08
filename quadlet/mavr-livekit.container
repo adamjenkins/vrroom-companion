@@ -3,7 +3,7 @@
 # Rootless Podman Quadlet unit for the LiveKit voice server (copy to ~/.config/containers/systemd/).
 #
 # Needs ~/.config/mavr-companion/livekit.yaml (scripts/render-livekit-config.sh --quadlet).
-# Pull the image once before the first start (podman pull docker.io/livekit/livekit-server:v1.9.0)
+# Pull the image once before the first start (podman pull docker.io/livekit/livekit-server:v1.13.9)
 # so that the start does not wait for the download. Change the tag here and LIVEKIT_TAG in .env
 # together. Podman 4.6 or later.
 
@@ -13,7 +13,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Container]
-Image=docker.io/livekit/livekit-server:v1.9.0
+Image=docker.io/livekit/livekit-server:v1.13.9
 ContainerName=mavr-livekit
 Network=host
 Volume=%h/.config/mavr-companion/livekit.yaml:/etc/livekit.yaml:ro,Z

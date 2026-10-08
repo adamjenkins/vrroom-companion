@@ -109,7 +109,9 @@ test('persistent abuse closes with 4429 after an error frame, and the others see
     const rooms = new Rooms({maxRoomPeers: 50, maxRooms: 10, graceMs: 10000, poseHz: 15});
     const other = joined(rooms, 1, now);
     const abuser = joined(rooms, 2, now);
-    for (let i = 0; i < LIMITS.all.burst + ABUSE_DROPS; i++) {
+    // The hello frame took one token of the all-frames bucket (frozen clock, no refill), so the
+    // remaining burst - 1 frames pass and the next ABUSE_DROPS are dropped without closing.
+    for (let i = 0; i < LIMITS.all.burst - 1 + ABUSE_DROPS; i++) {
         deliver(abuser.ws, {t: 'ping', n: i});
     }
     assert.equal(abuser.ws.closedWith, null);

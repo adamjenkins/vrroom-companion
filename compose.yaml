@@ -11,7 +11,8 @@
 # Both services use host networking: mavr-sync listens on MAVR_SYNC_LISTEN (default
 # 127.0.0.1:8090) and LiveKit on 7880 (signalling, put it behind the reverse proxy), 7881/tcp and
 # the UDP range of .env. Nothing is published with `ports:` because host networking needs none.
-# The health check reads the port from MAVR_SYNC_LISTEN inside the container; it connects to
+# The health check (sync/src/healthcheck.js, a file because podman-compose re-quotes inline code)
+# reads the port from MAVR_SYNC_LISTEN inside the container; it connects to
 # 127.0.0.1, so keep the listen address 127.0.0.1 or 0.0.0.0.
 name: mavr-companion
 
@@ -30,7 +31,7 @@ services:
     security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+((process.env.MAVR_SYNC_LISTEN||'127.0.0.1:8090').split(':').pop())+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "/app/src/healthcheck.js"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -38,7 +39,7 @@ services:
   livekit:
     # Apache-2.0 LiveKit server image, pulled from Docker Hub (not part of this repository).
     # Change the tag in .env (LIVEKIT_TAG) and in quadlet/mavr-livekit.container together.
-    image: docker.io/livekit/livekit-server:${LIVEKIT_TAG:-v1.9.0}
+    image: docker.io/livekit/livekit-server:${LIVEKIT_TAG:-v1.13.9}
     network_mode: host
     command: ["--config", "/etc/livekit.yaml"]
     volumes:

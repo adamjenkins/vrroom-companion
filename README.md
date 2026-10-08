@@ -138,7 +138,7 @@ Run everything as the ordinary user that will own the services (not root).
 
    ```sh
    podman build -t localhost/mavr-sync:0.1.0 sync
-   podman pull docker.io/livekit/livekit-server:v1.9.0
+   podman pull docker.io/livekit/livekit-server:v1.13.9
    ```
 
 7. Install the units and start them:
@@ -274,7 +274,7 @@ and choose the room size.
 | `MAVR_SYNC_EXTENSIONS` | empty | Extension modules (see `sync/extensions/README.md`). |
 | `LIVEKIT_API_URL` | `http://127.0.0.1:7880` | LiveKit's API for mavr-sync. With the key and secret set, a person who leaves a room is also removed from its voice room. Empty: off. |
 | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | (generated) | LiveKit API credentials (also written into LiveKit's configuration). |
-| `LIVEKIT_TAG` | `v1.9.0` | LiveKit image tag for compose. The Quadlet unit names the tag itself. |
+| `LIVEKIT_TAG` | `v1.13.9` | LiveKit image tag for compose. The Quadlet unit names the tag itself. |
 | `LIVEKIT_NODE_IP` | (required for voice) | IP address LiveKit announces to browsers. |
 | `LIVEKIT_UDP_START`, `LIVEKIT_UDP_END` | 50000, 50199 | UDP range for voice. |
 
