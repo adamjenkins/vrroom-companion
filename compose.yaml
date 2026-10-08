@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# MAVR companion stack (mavr-sync + LiveKit) for `podman compose` (primary) and `docker compose`.
+#
+# Before the first start:
+#   scripts/gen-secrets.sh            (writes .env with fresh secrets)
+#   edit .env                         (MAVR_SYNC_ISSUERS, LIVEKIT_NODE_IP)
+#   scripts/render-livekit-config.sh  (writes livekit/livekit.yaml from .env)
+# Then: podman compose up -d --build   (or: docker compose up -d --build)
+#
+# Both services use host networking: mavr-sync listens on MAVR_SYNC_LISTEN (default
+# 127.0.0.1:8090) and LiveKit on 7880 (signalling, put it behind the reverse proxy), 7881/tcp and
+# the UDP range of .env. Nothing is published with `ports:` because host networking needs none.
+# The health check reads the port from MAVR_SYNC_LISTEN inside the container; it connects to
+# 127.0.0.1, so keep the listen address 127.0.0.1 or 0.0.0.0.
+name: mavr-companion
+
+services:
+  mavr-sync:
+    build:
+      context: ./sync
+      dockerfile: Containerfile
+    image: localhost/mavr-sync:0.1.0
+    network_mode: host
+    env_file: .env
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+((process.env.MAVR_SYNC_LISTEN||'127.0.0.1:8090').split(':').pop())+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  livekit:
+    # Apache-2.0 LiveKit server image, pulled from Docker Hub (not part of this repository).
+    # Change the tag in .env (LIVEKIT_TAG) and in quadlet/mavr-livekit.container together.
+    image: docker.io/livekit/livekit-server:${LIVEKIT_TAG:-v1.9.0}
+    network_mode: host
+    command: ["--config", "/etc/livekit.yaml"]
+    volumes:
+      # Rendered by scripts/render-livekit-config.sh (mode 600, contains the API secret).
+      # ":Z" relabels the file for SELinux; Docker on a host without SELinux ignores it.
+      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro,Z
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped

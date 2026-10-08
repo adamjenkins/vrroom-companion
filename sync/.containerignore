@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Files left out of the mavr-sync image build context.
+node_modules
+test
+*.md
+extensions/*.md
+.git
+.env

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Files that must never be committed: secrets, rendered configuration, dependencies.
+.env
+.env.*
+!.env.example
+livekit/livekit.yaml
+livekit/livekit.yaml.*
+!livekit/livekit.yaml.template
+sync/node_modules/
+.DS_Store

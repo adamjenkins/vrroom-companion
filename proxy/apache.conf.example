@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Example Apache httpd reverse proxy for the MAVR companion stack: TLS for mavr-sync and LiveKit.
+#
+# Two public names, each with a browser-trusted certificate:
+#   companion.example.org -> mavr-sync on 127.0.0.1:8090 (/sync WebSocket, /healthz, /v1/...)
+#   livekit.example.org   -> LiveKit signalling on 127.0.0.1:7880 (WebSocket)
+# Voice itself does not pass through Apache: browsers send it to LiveKit's UDP range (or
+# 7881/tcp) directly, so open those ports in the firewall (README, "Ports and firewall").
+#
+# Required modules: proxy proxy_http ssl headers, plus rewrite for the optional HTTP-to-HTTPS
+# redirect (Debian/Ubuntu: a2enmod proxy proxy_http ssl headers rewrite && systemctl reload apache2)
+# "upgrade=websocket" needs Apache httpd 2.4.47 or later. Older versions use mod_proxy_wstunnel
+# with ws:// URLs instead; see the commented lines at the end.
+#
+# Privacy: no token is ever sent in a URL (the browser sends it inside the WebSocket), but the
+# access log records client IP addresses as for any page. Keep or shorten it as your site policy
+# says.
+
+<VirtualHost *:443>
+    ServerName companion.example.org
+
+    SSLEngine on
+    SSLCertificateFile    /etc/ssl/certs/companion.example.org.fullchain.pem
+    SSLCertificateKeyFile /etc/ssl/private/companion.example.org.key
+
+    ProxyRequests Off
+    ProxyPreserveHost On
+
+    # The WebSocket of the live rooms (mavr-sync pings every 15 seconds).
+    ProxyPass "/sync" "http://127.0.0.1:8090/sync" upgrade=websocket timeout=120
+    # Health check and the connection test of the Moodle admin page.
+    ProxyPass "/healthz" "http://127.0.0.1:8090/healthz"
+    ProxyPass "/v1/" "http://127.0.0.1:8090/v1/"
+
+    # Everything else: 404.
+    RedirectMatch 404 "^/(?!(sync|healthz)$|v1/)"
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName livekit.example.org
+
+    SSLEngine on
+    SSLCertificateFile    /etc/ssl/certs/livekit.example.org.fullchain.pem
+    SSLCertificateKeyFile /etc/ssl/private/livekit.example.org.key
+
+    ProxyRequests Off
+    ProxyPreserveHost On
+
+    # A voice session keeps its signalling WebSocket open for as long as it lasts.
+    ProxyPass "/" "http://127.0.0.1:7880/" upgrade=websocket timeout=3600
+</VirtualHost>
+
+# Optional: send plain HTTP to HTTPS for both names.
+<VirtualHost *:80>
+    ServerName companion.example.org
+    ServerAlias livekit.example.org
+    RewriteEngine On
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</VirtualHost>
+
+# Apache httpd older than 2.4.47 (also: a2enmod proxy_wstunnel rewrite). Replace the
+# "/sync" line of the first VirtualHost with:
+#   ProxyPass "/sync" "ws://127.0.0.1:8090/sync"
+# and the "/" line of the second with:
+#   RewriteEngine On
+#   RewriteCond %{HTTP:Upgrade} =websocket [NC]
+#   RewriteRule ^/(.*) ws://127.0.0.1:7880/$1 [P,L]
+#   ProxyPass "/" "http://127.0.0.1:7880/"

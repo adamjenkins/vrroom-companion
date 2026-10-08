@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2024 LiveKit, Inc.
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# LiveKit server configuration for the MAVR companion stack (keys follow LiveKit's documented
+# server configuration). Rendered into livekit.yaml by scripts/render-livekit-config.sh, which
+# replaces each marker (a variable name between two at signs) with its value from .env.
+# Do not put secrets here.
+
+# Signalling (HTTP and WebSocket). Keep it closed to the outside: the reverse proxy forwards
+# wss://livekit.example.org to 127.0.0.1:7880.
+port: 7880
+
+rtc:
+  # ICE over TCP, for browsers whose UDP is blocked. Open it in the firewall.
+  tcp_port: 7881
+  # UDP range for voice. Open it in the firewall.
+  port_range_start: @LIVEKIT_UDP_START@
+  port_range_end: @LIVEKIT_UDP_END@
+  # No external-IP discovery (it would contact a public STUN server): announce node_ip instead.
+  use_external_ip: false
+  node_ip: "@LIVEKIT_NODE_IP@"
+
+keys:
+  "@LIVEKIT_API_KEY@": "@LIVEKIT_API_SECRET@"
+
+room:
+  auto_create: true
+  # Seconds an empty room is kept, and kept after the last person left.
+  empty_timeout: 60
+  departure_timeout: 20
+  # Upper bound for every room; Moodle's room tokens set a lower maximum per room.
+  max_participants: 100
+
+# Embedded TURN is off. Browsers on networks that block UDP still connect over 7881/tcp.
+turn:
+  enabled: false
+
+# "warn" keeps participant identities and room names out of the log.
+logging:
+  level: warn
+  json: true
+
+# Optional embedded TURN over TLS, for very restrictive networks. Rootless Podman cannot bind
+# port 443, so TURN/TLS uses 5349 here; the certificate must be valid for the TURN name and be
+# mounted into the container (add a volume to compose.yaml or quadlet/mavr-livekit.container).
+# Replace the "turn:" block above with:
+#
+# turn:
+#   enabled: true
+#   domain: turn.example.org
+#   tls_port: 5349
+#   udp_port: 3478
+#   cert_file: /etc/livekit-turn/fullchain.pem
+#   key_file: /etc/livekit-turn/privkey.pem

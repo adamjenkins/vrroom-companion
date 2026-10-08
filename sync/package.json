@@ -1,0 +1,12 @@
+{
+  "name": "mavr-sync",
+  "version": "0.1.0",
+  "description": "Room sync service of the MAVR companion stack",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node src/server.js", "test": "node --test test/*.test.js"},
+  "dependencies": {"ws": "8.22.0"}
+}

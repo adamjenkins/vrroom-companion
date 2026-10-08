@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Rootless Podman Quadlet unit for the LiveKit voice server (copy to ~/.config/containers/systemd/).
+#
+# Needs ~/.config/mavr-companion/livekit.yaml (scripts/render-livekit-config.sh --quadlet).
+# Pull the image once before the first start (podman pull docker.io/livekit/livekit-server:v1.9.0)
+# so that the start does not wait for the download. Change the tag here and LIVEKIT_TAG in .env
+# together. Podman 4.6 or later.
+
+[Unit]
+Description=MAVR companion: LiveKit voice server
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=docker.io/livekit/livekit-server:v1.9.0
+ContainerName=mavr-livekit
+Network=host
+Volume=%h/.config/mavr-companion/livekit.yaml:/etc/livekit.yaml:ro,Z
+Exec=--config /etc/livekit.yaml
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

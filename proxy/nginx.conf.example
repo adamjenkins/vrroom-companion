@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Example nginx reverse proxy for the MAVR companion stack: TLS for mavr-sync and LiveKit.
+#
+# Two public names, each with a browser-trusted certificate:
+#   companion.example.org -> mavr-sync on 127.0.0.1:8090 (/sync WebSocket, /healthz, /v1/...)
+#   livekit.example.org   -> LiveKit signalling on 127.0.0.1:7880 (WebSocket)
+# Voice itself does not pass through nginx: browsers send it to LiveKit's UDP range (or 7881/tcp)
+# directly, so open those ports in the firewall (README, "Ports and firewall").
+#
+# Put this in the http {} context (for example /etc/nginx/conf.d/mavr-companion.conf), replace
+# the names and certificate paths, then: nginx -t && systemctl reload nginx
+#
+# Privacy: no token is ever sent in a URL (the browser sends it inside the WebSocket), but the
+# access log records client IP addresses as for any page. Keep or shorten it as your site policy
+# says, or switch it off for these two names with "access_log off;".
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name companion.example.org;
+
+    ssl_certificate     /etc/ssl/certs/companion.example.org.fullchain.pem;
+    ssl_certificate_key /etc/ssl/private/companion.example.org.key;
+
+    # The WebSocket of the live rooms.
+    location = /sync {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        # mavr-sync pings every 15 seconds, so 120 seconds is plenty.
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+
+    # Health check and the connection test of the Moodle admin page.
+    location = /healthz {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    location /v1/ {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name livekit.example.org;
+
+    ssl_certificate     /etc/ssl/certs/livekit.example.org.fullchain.pem;
+    ssl_certificate_key /etc/ssl/private/livekit.example.org.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:7880;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        # A voice session keeps its signalling WebSocket open for as long as it lasts.
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}
+
+# Optional: send plain HTTP to HTTPS for both names.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name companion.example.org livekit.example.org;
+    return 301 https://$host$request_uri;
+}
