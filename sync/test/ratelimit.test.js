@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: token buckets, the abuse counter, and the per-session limits through Session.
+// vrroom-sync tests: token buckets, the abuse counter, and the per-session limits through Session.
 
 import assert from 'node:assert/strict';
 import {test} from 'node:test';

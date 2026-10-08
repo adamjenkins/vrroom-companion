@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: wire protocol 'mavr-sync.1', server side (client frame parser, server frame builders).
+// vrroom-sync: wire protocol 'vrroom-sync.1', server side (client frame parser, server frame builders).
 
 /** WebSocket subprotocol of this protocol version. */
-export const SUBPROTOCOL = 'mavr-sync.1';
+export const SUBPROTOCOL = 'vrroom-sync.1';
 
 /** Protocol version number (in welcome and the health answer). */
 export const PROTOCOL_VERSION = 1;

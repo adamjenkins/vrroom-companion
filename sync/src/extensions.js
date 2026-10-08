@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: in-process extension point (Phase 5: the Hubs observer bot). Unused in Phase 4.
+// vrroom-sync: in-process extension point (Phase 5: the Hubs observer bot). Unused in Phase 4.
 
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';

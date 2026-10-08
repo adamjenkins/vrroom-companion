@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: HS256 JSON Web Tokens (sign and verify) with node:crypto only.
+// vrroom-sync: HS256 JSON Web Tokens (sign and verify) with node:crypto only.
 
 import {createHmac, timingSafeEqual} from 'node:crypto';
 import {stripSlashes} from './config.js';
 
 /** Expected audience. */
-export const AUDIENCE = 'mavr-sync';
+export const AUDIENCE = 'vrroom-sync';
 
 /** Token format version. */
 export const TOKEN_VERSION = 1;
@@ -146,7 +146,7 @@ export const verify = (token, secret, {purpose, issuers, now, maxLifetime}) => {
         }
         // 5. Audience, purpose, version.
         const audok = claims.aud === AUDIENCE || (Array.isArray(claims.aud) && claims.aud.includes(AUDIENCE));
-        if (!audok || typeof purpose !== 'string' || claims.mavr !== purpose || claims.v !== TOKEN_VERSION) {
+        if (!audok || typeof purpose !== 'string' || claims.vrroom !== purpose || claims.v !== TOKEN_VERSION) {
             return fail(UNAUTHORISED);
         }
         // 6. Purpose-specific claims.

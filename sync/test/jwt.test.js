@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: HS256 sign/verify and every claim rule of build contract §3.2.
+// vrroom-sync tests: HS256 sign/verify and every claim rule of build contract §3.2.
 
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
@@ -81,10 +81,10 @@ test('an issuer that is not allowed gets 4403', () => {
 });
 
 test('wrong audience, purpose or version is refused', () => {
-    for (const overrides of [{aud: 'other'}, {aud: ['x', 'y']}, {mavr: 'test'}, {mavr: 'observe'}, {mavr: undefined}, {v: 2}, {v: '1'}]) {
+    for (const overrides of [{aud: 'other'}, {aud: ['x', 'y']}, {vrroom: 'test'}, {vrroom: 'observe'}, {vrroom: undefined}, {v: 2}, {v: '1'}]) {
         assert.equal(verify(makeToken(overrides, {now: NOW}), SECRET, JOIN).code, 4401, JSON.stringify(overrides));
     }
-    assert.equal(verify(makeToken({aud: ['x', 'mavr-sync']}, {now: NOW}), SECRET, JOIN).ok, true);
+    assert.equal(verify(makeToken({aud: ['x', 'vrroom-sync']}, {now: NOW}), SECRET, JOIN).ok, true);
 });
 
 test('times: expired, future nbf/iat beyond the leeway, lifetime over 300 s', () => {
@@ -137,5 +137,5 @@ test('test purpose: nonce required, lifetime at most 60 s, join tokens refused',
 });
 
 test('an unknown purpose option is refused even when the claim matches', () => {
-    assert.equal(verify(makeToken({mavr: 'observe'}, {now: NOW}), SECRET, {purpose: 'observe', issuers: [ISSUER], now: NOW}).code, 4401);
+    assert.equal(verify(makeToken({vrroom: 'observe'}, {now: NOW}), SECRET, {purpose: 'observe', issuers: [ISSUER], now: NOW}).code, 4401);
 });

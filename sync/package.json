@@ -1,7 +1,7 @@
 {
-  "name": "mavr-sync",
+  "name": "vrroom-sync",
   "version": "0.1.0",
-  "description": "Room sync service of the MAVR companion stack",
+  "description": "Room sync service of the VR room companion stack",
   "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",

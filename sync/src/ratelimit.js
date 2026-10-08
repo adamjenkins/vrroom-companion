@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: token-bucket rate limits (time injected, so tests control the clock).
+// vrroom-sync: token-bucket rate limits (time injected, so tests control the clock).
 
 /** Per-session limits (build contract §6.6): rate per second and burst. */
 export const LIMITS = Object.freeze({

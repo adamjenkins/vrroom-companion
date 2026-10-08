@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: one client WebSocket — hello, token checks, rate limits, frame handling, deadlines.
+// vrroom-sync: one client WebSocket — hello, token checks, rate limits, frame handling, deadlines.
 
 import {decode, encode} from './codec.js';
 import {verify, MAX_LIFETIME} from './jwt.js';

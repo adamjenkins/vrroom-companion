@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: rooms — capacity, takeover, replace, away grace, empty rooms, pose batching.
+// vrroom-sync tests: rooms — capacity, takeover, replace, away grace, empty rooms, pose batching.
 
 import assert from 'node:assert/strict';
 import {test} from 'node:test';

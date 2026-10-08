@@ -6,7 +6,7 @@
 # Usage: scripts/render-livekit-config.sh [--quadlet]
 #
 #   (no option)  Write livekit/livekit.yaml (for podman compose / docker compose).
-#   --quadlet    Write ~/.config/mavr-companion/livekit.yaml instead (for the Quadlet units).
+#   --quadlet    Write ~/.config/vrroom-companion/livekit.yaml instead (for the Quadlet units).
 #
 # The output contains the LiveKit API secret: it is written with mode 600 and is git-ignored.
 # Run the script again after every change to .env, then restart LiveKit.
@@ -28,7 +28,7 @@ die() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --quadlet) OUTPUT="${HOME}/.config/mavr-companion/livekit.yaml" ;;
+        --quadlet) OUTPUT="${HOME}/.config/vrroom-companion/livekit.yaml" ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; die "unknown option: $1" ;;
     esac

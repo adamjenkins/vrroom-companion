@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: rooms and peers, in memory only while used (capacity, replace, away grace, pose batching).
+// vrroom-sync: rooms and peers, in memory only while used (capacity, replace, away grace, pose batching).
 
 import * as Protocol from './protocol.js';
 
@@ -31,8 +31,8 @@ export const MAX_BUFFERED = 4 * 1024 * 1024;
 export class Rooms {
     /**
      * @param {Object} options
-     * @param {number} options.maxRoomPeers Global room capacity (MAVR_SYNC_MAX_ROOM_PEERS).
-     * @param {number} options.maxRooms MAVR_SYNC_MAX_ROOMS.
+     * @param {number} options.maxRoomPeers Global room capacity (VRROOM_SYNC_MAX_ROOM_PEERS).
+     * @param {number} options.maxRooms VRROOM_SYNC_MAX_ROOMS.
      * @param {number} options.graceMs Away grace in ms.
      * @param {number} options.poseHz Pose tick rate (sent in welcome).
      * @param {Object} [options.hooks] Extension host ({emit}).

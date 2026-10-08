@@ -1,12 +1,12 @@
-# mavr-companion
+# vrroom-companion
 
-The container stack behind the **Companion service** run mode of the MAVR activity for Moodle
-(`mod_mavr` with the sub-plugin `mavrruntime_companion`). It makes live rooms of up to 50 people
+The container stack behind the **Companion service** run mode of the VR room activity for Moodle
+(`mod_vrroom` with the sub-plugin `vrroomruntime_companion`). It makes live rooms of up to 50 people
 possible, with voice, and keeps participants' IP addresses away from each other.
 
 Two services:
 
-- **mavr-sync** (this repository, `sync/`): a small Node.js WebSocket service. Browsers in a live
+- **vrroom-sync** (this repository, `sync/`): a small Node.js WebSocket service. Browsers in a live
   room send it their position and state; it passes them on to the others in the same room.
 - **LiveKit** (the Apache-2.0 [LiveKit server](https://github.com/livekit/livekit), pulled as an
   image): relays the voices of the people in a room.
@@ -20,12 +20,12 @@ The stack is deliberately thin:
   Tokens live five minutes and are renewed through Moodle, which re-checks access each time, so a
   person who loses access (attempt finished, removed from the group, live mode off) is out within
   about five minutes. Tokens carry a pseudonymous id, never the Moodle user id.
-- `mavr-sync` logs counts and codes only: no names, ids, IP addresses, tokens or message contents.
-- A later phase adds a Hubs observer bot to `mavr-sync` through its extension point
+- `vrroom-sync` logs counts and codes only: no names, ids, IP addresses, tokens or message contents.
+- A later phase adds a Hubs observer bot to `vrroom-sync` through its extension point
   (`sync/extensions/README.md`); nothing uses it yet.
 
 ```
-Browser ──wss──► reverse proxy (TLS) ──► mavr-sync 127.0.0.1:8090 ──(optional)──► LiveKit API
+Browser ──wss──► reverse proxy (TLS) ──► vrroom-sync 127.0.0.1:8090 ──(optional)──► LiveKit API
    │   └─wss──► reverse proxy (TLS) ──► LiveKit   127.0.0.1:7880
    └── voice: UDP 50000-50199 (or TCP 7881) ──────► LiveKit (directly, no proxy)
 Moodle ── admin connection test ──► /healthz, /v1/challenge, LiveKit
@@ -59,12 +59,12 @@ Moodle ── admin connection test ──► /healthz, /v1/challenge, LiveKit
   (nginx or Apache). Browsers allow the microphone only on secure pages, and a secure page may
   only open secure WebSockets.
 - The firewall ports below.
-- About 256 MB of memory for `mavr-sync` and 512 MB or more for LiveKit at 50 people (estimate).
-- The Moodle plugins `mod_mavr` (with `mavrruntime_builtin`) and `mavrruntime_companion`.
+- About 256 MB of memory for `vrroom-sync` and 512 MB or more for LiveKit at 50 people (estimate).
+- The Moodle plugins `mod_vrroom` (with `vrroomruntime_builtin`) and `vrroomruntime_companion`.
 
 Rootless Podman cannot bind ports below 1024, so neither service listens on 443: the site's
 existing reverse proxy terminates TLS and forwards to them. Both containers use **host
-networking**: LiveKit needs it for its UDP range, and with it `mavr-sync` reaches LiveKit's API at
+networking**: LiveKit needs it for its UDP range, and with it `vrroom-sync` reaches LiveKit's API at
 `127.0.0.1:7880` the same way under Podman and Docker.
 
 ## Ports and firewall
@@ -72,7 +72,7 @@ networking**: LiveKit needs it for its UDP range, and with it `mavr-sync` reache
 | Port | Service | Open to the internet? |
 |---|---|---|
 | 443/tcp | your reverse proxy (both names) | yes |
-| 8090/tcp | mavr-sync (listens on 127.0.0.1 only) | no |
+| 8090/tcp | vrroom-sync (listens on 127.0.0.1 only) | no |
 | 7880/tcp | LiveKit signalling (listens on all interfaces) | **no**: block it, the proxy forwards to it |
 | 7881/tcp | LiveKit ICE over TCP (voice for networks that block UDP) | yes |
 | 50000–50199/udp | LiveKit voice (`LIVEKIT_UDP_START`–`LIVEKIT_UDP_END`) | yes |
@@ -103,8 +103,8 @@ Run everything as the ordinary user that will own the services (not root).
 1. Get the stack:
 
    ```sh
-   git clone <this repository> mavr-companion
-   cd mavr-companion
+   git clone <this repository> vrroom-companion
+   cd vrroom-companion
    ```
 
 2. Create `.env` with fresh secrets:
@@ -114,12 +114,12 @@ Run everything as the ordinary user that will own the services (not root).
    ```
 
 3. Edit `.env`:
-   - `MAVR_SYNC_ISSUERS`: your Moodle `wwwroot` exactly as in Moodle's `config.php`, without a
+   - `VRROOM_SYNC_ISSUERS`: your Moodle `wwwroot` exactly as in Moodle's `config.php`, without a
      trailing slash (several sites: comma-separated);
    - `LIVEKIT_NODE_IP`: the IP address browsers use to reach this host.
 
 4. Load the secrets into Podman and write the non-secret settings to
-   `~/.config/mavr-companion/mavr-sync.env`:
+   `~/.config/vrroom-companion/vrroom-sync.env`:
 
    ```sh
    scripts/gen-secrets.sh --podman-secrets
@@ -128,16 +128,16 @@ Run everything as the ordinary user that will own the services (not root).
    (It reuses the values in `.env`; it generates nothing new. Run it again after every change to
    `.env`.)
 
-5. Render LiveKit's configuration to `~/.config/mavr-companion/livekit.yaml`:
+5. Render LiveKit's configuration to `~/.config/vrroom-companion/livekit.yaml`:
 
    ```sh
    scripts/render-livekit-config.sh --quadlet
    ```
 
-6. Build the `mavr-sync` image and pull LiveKit:
+6. Build the `vrroom-sync` image and pull LiveKit:
 
    ```sh
-   podman build -t localhost/mavr-sync:0.1.0 sync
+   podman build -t localhost/vrroom-sync:0.1.0 sync
    podman pull docker.io/livekit/livekit-server:v1.13.9
    ```
 
@@ -145,9 +145,9 @@ Run everything as the ordinary user that will own the services (not root).
 
    ```sh
    mkdir -p ~/.config/containers/systemd
-   cp quadlet/mavr-sync.container quadlet/mavr-livekit.container ~/.config/containers/systemd/
+   cp quadlet/vrroom-sync.container quadlet/vrroom-livekit.container ~/.config/containers/systemd/
    systemctl --user daemon-reload
-   systemctl --user start mavr-sync mavr-livekit
+   systemctl --user start vrroom-sync vrroom-livekit
    ```
 
 8. Keep them running after you log out and start them at boot:
@@ -162,9 +162,9 @@ Run everything as the ordinary user that will own the services (not root).
 9. Check:
 
    ```sh
-   systemctl --user status mavr-sync mavr-livekit
-   journalctl --user -u mavr-sync -u mavr-livekit --since -10min
-   curl -s http://127.0.0.1:8090/healthz      # {"status":"ok","service":"mavr-sync","protocol":1}
+   systemctl --user status vrroom-sync vrroom-livekit
+   journalctl --user -u vrroom-sync -u vrroom-livekit --since -10min
+   curl -s http://127.0.0.1:8090/healthz      # {"status":"ok","service":"vrroom-sync","protocol":1}
    ```
 
 Then set up the [reverse proxy](#reverse-proxy) and [Moodle](#configure-moodle).
@@ -172,14 +172,14 @@ Then set up the [reverse proxy](#reverse-proxy) and [Moodle](#configure-moodle).
 ## Install with podman compose
 
 ```sh
-git clone <this repository> mavr-companion
-cd mavr-companion
+git clone <this repository> vrroom-companion
+cd vrroom-companion
 scripts/gen-secrets.sh
-# edit .env: MAVR_SYNC_ISSUERS and LIVEKIT_NODE_IP
+# edit .env: VRROOM_SYNC_ISSUERS and LIVEKIT_NODE_IP
 scripts/render-livekit-config.sh
 podman compose up -d --build
 podman compose ps
-podman compose logs mavr-sync
+podman compose logs vrroom-sync
 ```
 
 `podman compose` hands the file to an external provider (`podman-compose` or `docker-compose`);
@@ -189,15 +189,15 @@ method, use the Quadlet units instead (or your provider's own systemd integratio
 ## Install with Docker
 
 ```sh
-git clone <this repository> mavr-companion
-cd mavr-companion
+git clone <this repository> vrroom-companion
+cd vrroom-companion
 scripts/gen-secrets.sh
-# edit .env: MAVR_SYNC_ISSUERS and LIVEKIT_NODE_IP
+# edit .env: VRROOM_SYNC_ISSUERS and LIVEKIT_NODE_IP
 scripts/render-livekit-config.sh
 sudo chown root:root livekit/livekit.yaml   # rootful Docker only, see below
 docker compose up -d --build
 docker compose ps
-docker compose logs mavr-sync
+docker compose logs vrroom-sync
 ```
 
 - `restart: unless-stopped` brings the services back after a reboot when the Docker service starts.
@@ -221,23 +221,23 @@ Examples: [`proxy/nginx.conf.example`](proxy/nginx.conf.example) and
 - Apache needs httpd 2.4.47 or later for `upgrade=websocket` (the example shows the older
   `mod_proxy_wstunnel` form too).
 - Voice (UDP and 7881/tcp) does not pass through the proxy.
-- mavr-sync answers only the exact paths `/sync`, `/healthz` and `/v1/…`. If you publish it under a
-  path prefix (Moodle's companion address `https://example.org/mavr` means browsers open
-  `wss://example.org/mavr/sync` and Moodle calls `https://example.org/mavr/healthz`), the proxy must
-  strip the prefix before passing the request on (nginx: `location /mavr/ { proxy_pass
-  http://127.0.0.1:8090/; … }`; Apache: `ProxyPass "/mavr/sync" "http://127.0.0.1:8090/sync"
+- vrroom-sync answers only the exact paths `/sync`, `/healthz` and `/v1/…`. If you publish it under a
+  path prefix (Moodle's companion address `https://example.org/vrroom` means browsers open
+  `wss://example.org/vrroom/sync` and Moodle calls `https://example.org/vrroom/healthz`), the proxy must
+  strip the prefix before passing the request on (nginx: `location /vrroom/ { proxy_pass
+  http://127.0.0.1:8090/; … }`; Apache: `ProxyPass "/vrroom/sync" "http://127.0.0.1:8090/sync"
   upgrade=websocket` and the same for the other two paths).
 
 ## Configure Moodle
 
-In *Site administration > Plugins > Activity modules > MAVR > Companion service*:
+In *Site administration > Plugins > Activity modules > VR room > Companion service*:
 
 | Setting | Name | Value |
 |---|---|---|
 | Companion address | `url` | `https://companion.example.org` (browsers connect to `wss://companion.example.org/sync`) |
 | Address used by this server (optional) | `serverurl` | only if Moodle reaches the stack by another address, for example `http://127.0.0.1:8090` when Moodle runs on the same host |
-| Shared secret | `secret` | `MAVR_SYNC_SECRET` from `.env` |
-| Maximum people per room | `maxusers` | 2–50 (default 50; also capped by `MAVR_SYNC_MAX_ROOM_PEERS`) |
+| Shared secret | `secret` | `VRROOM_SYNC_SECRET` from `.env` |
+| Maximum people per room | `maxusers` | 2–50 (default 50; also capped by `VRROOM_SYNC_MAX_ROOM_PEERS`) |
 | LiveKit address | `livekiturl` | `wss://livekit.example.org` |
 | LiveKit API key | `livekitkey` | `LIVEKIT_API_KEY` from `.env` |
 | LiveKit API secret | `livekitsecret` | `LIVEKIT_API_SECRET` from `.env` |
@@ -256,30 +256,30 @@ and choose the room size.
 
 ## Settings reference
 
-`.env` (compose) or `~/.config/mavr-companion/mavr-sync.env` plus Podman secrets (Quadlet):
+`.env` (compose) or `~/.config/vrroom-companion/vrroom-sync.env` plus Podman secrets (Quadlet):
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MAVR_SYNC_SECRET` | (required) | Shared secret with Moodle, at least 32 characters, no spaces. |
-| `MAVR_SYNC_ISSUERS` | (required) | Moodle `wwwroot` values allowed to issue tokens, comma-separated. |
-| `MAVR_SYNC_LISTEN` | `127.0.0.1:8090` | Listen address and port (port 1024–65535). The health checks connect to 127.0.0.1, so use `127.0.0.1` or `0.0.0.0`. If you change the port, change the proxy too. |
-| `MAVR_SYNC_ORIGINS` | origins of the issuers | Browser origins allowed to open the WebSocket. |
-| `MAVR_SYNC_MAX_ROOM_PEERS` | 50 | Largest room (2–100). |
-| `MAVR_SYNC_MAX_ROOMS` | 1000 | Rooms at the same time. |
-| `MAVR_SYNC_MAX_CONNECTIONS` | 2000 | WebSocket connections at the same time. |
-| `MAVR_SYNC_MAX_PENDING` | 200 | Connections that have not sent their token yet. |
-| `MAVR_SYNC_POSE_HZ` | 15 | Position updates sent to each browser per second (1–30). |
-| `MAVR_SYNC_GRACE_SECONDS` | 10 | Seconds before the others are told that a dropped connection has left (0–60). |
-| `MAVR_SYNC_LOG_LEVEL` | `info` | `error`, `warn`, `info` or `debug`. |
-| `MAVR_SYNC_EXTENSIONS` | empty | Extension modules (see `sync/extensions/README.md`). |
-| `LIVEKIT_API_URL` | `http://127.0.0.1:7880` | LiveKit's API for mavr-sync. With the key and secret set, a person who leaves a room is also removed from its voice room. Empty: off. |
+| `VRROOM_SYNC_SECRET` | (required) | Shared secret with Moodle, at least 32 characters, no spaces. |
+| `VRROOM_SYNC_ISSUERS` | (required) | Moodle `wwwroot` values allowed to issue tokens, comma-separated. |
+| `VRROOM_SYNC_LISTEN` | `127.0.0.1:8090` | Listen address and port (port 1024–65535). The health checks connect to 127.0.0.1, so use `127.0.0.1` or `0.0.0.0`. If you change the port, change the proxy too. |
+| `VRROOM_SYNC_ORIGINS` | origins of the issuers | Browser origins allowed to open the WebSocket. |
+| `VRROOM_SYNC_MAX_ROOM_PEERS` | 50 | Largest room (2–100). |
+| `VRROOM_SYNC_MAX_ROOMS` | 1000 | Rooms at the same time. |
+| `VRROOM_SYNC_MAX_CONNECTIONS` | 2000 | WebSocket connections at the same time. |
+| `VRROOM_SYNC_MAX_PENDING` | 200 | Connections that have not sent their token yet. |
+| `VRROOM_SYNC_POSE_HZ` | 15 | Position updates sent to each browser per second (1–30). |
+| `VRROOM_SYNC_GRACE_SECONDS` | 10 | Seconds before the others are told that a dropped connection has left (0–60). |
+| `VRROOM_SYNC_LOG_LEVEL` | `info` | `error`, `warn`, `info` or `debug`. |
+| `VRROOM_SYNC_EXTENSIONS` | empty | Extension modules (see `sync/extensions/README.md`). |
+| `LIVEKIT_API_URL` | `http://127.0.0.1:7880` | LiveKit's API for vrroom-sync. With the key and secret set, a person who leaves a room is also removed from its voice room. Empty: off. |
 | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | (generated) | LiveKit API credentials (also written into LiveKit's configuration). |
 | `LIVEKIT_TAG` | `v1.13.9` | LiveKit image tag for compose. The Quadlet unit names the tag itself. |
 | `LIVEKIT_NODE_IP` | (required for voice) | IP address LiveKit announces to browsers. |
 | `LIVEKIT_UDP_START`, `LIVEKIT_UDP_END` | 50000, 50199 | UDP range for voice. |
 
 After a change: for compose, `podman compose up -d` (or `docker compose up -d`); for Quadlet,
-`scripts/gen-secrets.sh --podman-secrets` and `systemctl --user restart mavr-sync`. LiveKit
+`scripts/gen-secrets.sh --podman-secrets` and `systemctl --user restart vrroom-sync`. LiveKit
 settings need `scripts/render-livekit-config.sh` (with `--quadlet` for Quadlet) and a LiveKit
 restart.
 
@@ -299,7 +299,7 @@ restart.
 ## Testing without TLS
 
 On a test machine without certificates, Moodle may use `http://` and `ws://` addresses (the
-settings accept them for testing). Set `MAVR_SYNC_LISTEN=0.0.0.0:8090`, use
+settings accept them for testing). Set `VRROOM_SYNC_LISTEN=0.0.0.0:8090`, use
 `http://<host>:8090` as the companion address and `ws://<host>:7880` as the LiveKit address, and
 open 8090 and 7880 to the test browsers. Browsers refuse the microphone on non-secure pages unless
 you start them with flags that treat the site as secure. Never run a real site this way.
@@ -312,36 +312,36 @@ room at that moment are reconnected automatically.
 ```sh
 git pull
 # Quadlet
-podman build -t localhost/mavr-sync:0.1.0 sync     # the tag of the new version, see quadlet/mavr-sync.container
+podman build -t localhost/vrroom-sync:0.1.0 sync     # the tag of the new version, see quadlet/vrroom-sync.container
 cp quadlet/*.container ~/.config/containers/systemd/ && systemctl --user daemon-reload
-systemctl --user restart mavr-sync mavr-livekit
+systemctl --user restart vrroom-sync vrroom-livekit
 # compose
 podman compose up -d --build                       # or: docker compose up -d --build
 ```
 
 To move to a newer LiveKit server, change `LIVEKIT_TAG` in `.env` and the `Image=` line of
-`quadlet/mavr-livekit.container` together, then pull and restart.
+`quadlet/vrroom-livekit.container` together, then pull and restart.
 
 ## Troubleshooting
 
 - **Health:** `curl -s http://127.0.0.1:8090/healthz` on the host, and
   `https://companion.example.org/healthz` from outside, answer
-  `{"status":"ok","service":"mavr-sync","protocol":1}`.
-- **Logs:** `journalctl --user -u mavr-sync -u mavr-livekit` (Quadlet), or `podman compose logs` /
-  `docker compose logs`. `mavr-sync` writes one JSON line per event; a `config_error` line names the
+  `{"status":"ok","service":"vrroom-sync","protocol":1}`.
+- **Logs:** `journalctl --user -u vrroom-sync -u vrroom-livekit` (Quadlet), or `podman compose logs` /
+  `docker compose logs`. `vrroom-sync` writes one JSON line per event; a `config_error` line names the
   variable that is wrong, then the service exits. LiveKit logs at level `warn`: look there for
   configuration errors after a start.
 - **Admin test fails at "proved that it knows the shared secret":** the `secret` setting in Moodle
-  and `MAVR_SYNC_SECRET` differ, or another server answers at that address. "Does not accept tokens
-  from this site": add Moodle's `wwwroot` to `MAVR_SYNC_ISSUERS`. "Clock differs": synchronise the
+  and `VRROOM_SYNC_SECRET` differ, or another server answers at that address. "Does not accept tokens
+  from this site": add Moodle's `wwwroot` to `VRROOM_SYNC_ISSUERS`. "Clock differs": synchronise the
   clocks (NTP) of both servers.
 - **Browsers cannot join although the admin test passes:** check the browser check on the test
-  page; the proxy must pass the WebSocket upgrade for `/sync`, and `MAVR_SYNC_ORIGINS` must contain
-  the Moodle site's origin (the default takes it from `MAVR_SYNC_ISSUERS`).
+  page; the proxy must pass the WebSocket upgrade for `/sync`, and `VRROOM_SYNC_ORIGINS` must contain
+  the Moodle site's origin (the default takes it from `VRROOM_SYNC_ISSUERS`).
 - **No voice:** check the LiveKit settings and the firewall (UDP range and 7881/tcp), and that
   `LIVEKIT_NODE_IP` is the address browsers can reach.
 
-WebSocket close codes of `mavr-sync` (visible in the browser's developer tools):
+WebSocket close codes of `vrroom-sync` (visible in the browser's developer tools):
 
 | Code | Meaning | What the browser does |
 |---|---|---|
@@ -353,7 +353,7 @@ WebSocket close codes of `mavr-sync` (visible in the browser's developer tools):
 | 4001 | No token within 5 seconds of connecting | reconnects |
 | 4008 | The browser could not keep up (too much unsent data) | reconnects |
 | 4401 | Token invalid or expired (wrong secret, wrong purpose, bad clock) | asks Moodle for a new token once |
-| 4403 | Moodle site (issuer) or browser origin not allowed | gives up: check `MAVR_SYNC_ISSUERS` / `MAVR_SYNC_ORIGINS` |
+| 4403 | Moodle site (issuer) or browser origin not allowed | gives up: check `VRROOM_SYNC_ISSUERS` / `VRROOM_SYNC_ORIGINS` |
 | 4409 | The same person joined again elsewhere (another tab or room) | leaves |
 | 4410 | Session expired (no renewed token in time) | asks Moodle for a new token |
 | 4429 | Too many messages | gives up while joining, reconnects when in the room |
@@ -364,7 +364,7 @@ Reconnection waits 1, 2, 4, 8, then 15 seconds between attempts and gives up aft
 
 ## Privacy
 
-- **mavr-sync** sees, while a person is in a room: a pseudonymous peer id (made by Moodle from the
+- **vrroom-sync** sees, while a person is in a room: a pseudonymous peer id (made by Moodle from the
   user and activity with a secret salt; it is not the user id), the full name, whether it is an
   attempt or a teacher's preview, the latest position and state, and the browser's IP address
   (through the proxy, as the connection's source). Nothing is written to disk; everything is gone
@@ -372,20 +372,20 @@ Reconnection waits 1, 2, 4, 8, then 15 seconds between attempts and gives up aft
 - **LiveKit** sees the same peer id and name, the IP address, and the voice while the microphone is
   on. It relays voice and records nothing.
 - **Other participants** see the name, position, state and voice, but **not** the IP address.
-- **Logging:** `mavr-sync` logs no personal data. LiveKit runs at level `warn`, which keeps
+- **Logging:** `vrroom-sync` logs no personal data. LiveKit runs at level `warn`, which keeps
   participant identities and room names out of its log. The site's reverse proxy logs client IP
   addresses as it does for any page; no token or name appears in a URL.
-- The Moodle plugin `mavrruntime_companion` declares both services as external locations in its
+- The Moodle plugin `vrroomruntime_companion` declares both services as external locations in its
   privacy metadata.
 
 ## Licences
 
-- This repository (mavr-sync, configuration, scripts, documentation): **GNU GPL v3 or later**, see
+- This repository (vrroom-sync, configuration, scripts, documentation): **GNU GPL v3 or later**, see
   [`LICENSE`](LICENSE). © 2026 Adam Jenkins.
 - **LiveKit server** is © LiveKit, Inc. under the **Apache License 2.0**. It is not included in this
   repository: the image `docker.io/livekit/livekit-server` is pulled when you install. The
   configuration template follows LiveKit's documented configuration format.
-- **ws** (the WebSocket library of mavr-sync) is under the **MIT** licence and installed from npm
+- **ws** (the WebSocket library of vrroom-sync) is under the **MIT** licence and installed from npm
   when the image is built (exact version in `sync/package-lock.json`).
 - The `node:22-alpine` base image contains Node.js (MIT) and Alpine Linux packages under their own
   licences.

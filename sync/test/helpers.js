@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: token minting, an ephemeral server, ws clients with a frame queue.
+// vrroom-sync tests: token minting, an ephemeral server, ws clients with a frame queue.
 
 import {EventEmitter} from 'node:events';
 import {WebSocket} from 'ws';
@@ -17,10 +17,10 @@ export const ORIGIN = 'https://moodle.example.org';
 
 /** Base environment for loadConfig in tests. */
 export const BASE_ENV = Object.freeze({
-    MAVR_SYNC_SECRET: SECRET,
-    MAVR_SYNC_ISSUERS: ISSUER,
-    MAVR_SYNC_LISTEN: '127.0.0.1:8090',
-    MAVR_SYNC_LOG_LEVEL: 'debug',
+    VRROOM_SYNC_SECRET: SECRET,
+    VRROOM_SYNC_ISSUERS: ISSUER,
+    VRROOM_SYNC_LISTEN: '127.0.0.1:8090',
+    VRROOM_SYNC_LOG_LEVEL: 'debug',
 });
 
 /**
@@ -56,7 +56,7 @@ export const roomId = (n) => 'r' + n.toString(16).padStart(32, '0');
  */
 export const makeClaims = (overrides = {}, now = seconds()) => Object.assign({
     iss: ISSUER,
-    aud: 'mavr-sync',
+    aud: 'vrroom-sync',
     sub: peerId(1),
     room: roomId(1),
     name: 'Sam Student',
@@ -65,7 +65,7 @@ export const makeClaims = (overrides = {}, now = seconds()) => Object.assign({
     iat: now,
     nbf: now,
     exp: now + 300,
-    mavr: 'join',
+    vrroom: 'join',
     v: 1,
 }, overrides);
 
@@ -90,8 +90,8 @@ export const makeTestToken = (overrides = {}, options = {}) => {
     const now = options.now === undefined ? seconds() : options.now;
     return sign(Object.assign({
         iss: ISSUER,
-        aud: 'mavr-sync',
-        mavr: 'test',
+        aud: 'vrroom-sync',
+        vrroom: 'test',
         v: 1,
         nonce: 'abcdef0123456789abcdef0123456789',
         iat: now,

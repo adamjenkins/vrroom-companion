@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: configuration from environment variables, validated at start.
+// vrroom-sync: configuration from environment variables, validated at start.
 
 import {isIP} from 'node:net';
 import path from 'node:path';
@@ -77,13 +77,13 @@ const integer = (env, name, fallback, min, max) => {
 const isHost = (host) => isIP(host) !== 0 || /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,252})$/.test(host);
 
 /**
- * Parse MAVR_SYNC_LISTEN ('host:port', IPv6 in brackets).
+ * Parse VRROOM_SYNC_LISTEN ('host:port', IPv6 in brackets).
  *
  * @param {string} raw
  * @returns {{host: string, port: number}}
  */
 const parseListen = (raw) => {
-    const name = 'MAVR_SYNC_LISTEN';
+    const name = 'VRROOM_SYNC_LISTEN';
     const colon = raw.lastIndexOf(':');
     if (colon <= 0) {
         throw new ConfigError(name);
@@ -135,13 +135,13 @@ const parseHttpUrl = (raw, name) => {
 export const stripSlashes = (text) => text.replace(/\/+$/, '');
 
 /**
- * Parse MAVR_SYNC_ISSUERS: the wwwroot of each Moodle site allowed to sign tokens.
+ * Parse VRROOM_SYNC_ISSUERS: the wwwroot of each Moodle site allowed to sign tokens.
  *
  * @param {string} raw
  * @returns {string[]}
  */
 const parseIssuers = (raw) => {
-    const name = 'MAVR_SYNC_ISSUERS';
+    const name = 'VRROOM_SYNC_ISSUERS';
     const issuers = list(raw).map((item) => {
         const stripped = stripSlashes(item);
         parseHttpUrl(stripped, name);
@@ -154,14 +154,14 @@ const parseIssuers = (raw) => {
 };
 
 /**
- * Parse MAVR_SYNC_ORIGINS (or derive them from the issuers).
+ * Parse VRROOM_SYNC_ORIGINS (or derive them from the issuers).
  *
  * @param {string} raw
  * @param {string[]} issuers
  * @returns {string[]}
  */
 const parseOrigins = (raw, issuers) => {
-    const name = 'MAVR_SYNC_ORIGINS';
+    const name = 'VRROOM_SYNC_ORIGINS';
     if (raw === '') {
         return [...new Set(issuers.map((issuer) => new URL(issuer).origin))];
     }
@@ -179,7 +179,7 @@ const parseOrigins = (raw, issuers) => {
 };
 
 /**
- * Parse MAVR_SYNC_EXTENSIONS: absolute paths of .js/.mjs modules under EXTENSIONS_DIR.
+ * Parse VRROOM_SYNC_EXTENSIONS: absolute paths of .js/.mjs modules under EXTENSIONS_DIR.
  *
  * @param {string} raw
  * @returns {string[]}
@@ -187,7 +187,7 @@ const parseOrigins = (raw, issuers) => {
 const parseExtensions = (raw) => list(raw).map((item) => {
     if (!path.isAbsolute(item) || path.normalize(item) !== item || !item.startsWith(EXTENSIONS_DIR + '/') ||
             !/\.m?js$/.test(item)) {
-        throw new ConfigError('MAVR_SYNC_EXTENSIONS');
+        throw new ConfigError('VRROOM_SYNC_EXTENSIONS');
     }
     return item;
 });
@@ -215,20 +215,20 @@ const deepFreeze = (object) => {
  * @throws {ConfigError} Naming the first invalid variable.
  */
 export const loadConfig = (env = process.env) => {
-    const listenraw = value(env, 'MAVR_SYNC_LISTEN');
+    const listenraw = value(env, 'VRROOM_SYNC_LISTEN');
     const listen = parseListen(listenraw === '' ? '127.0.0.1:8090' : listenraw);
 
-    const secret = value(env, 'MAVR_SYNC_SECRET');
+    const secret = value(env, 'VRROOM_SYNC_SECRET');
     if (secret.length < MIN_SECRET_LENGTH || /\s/.test(secret)) {
-        throw new ConfigError('MAVR_SYNC_SECRET');
+        throw new ConfigError('VRROOM_SYNC_SECRET');
     }
 
-    const issuers = parseIssuers(value(env, 'MAVR_SYNC_ISSUERS'));
-    const origins = parseOrigins(value(env, 'MAVR_SYNC_ORIGINS'), issuers);
+    const issuers = parseIssuers(value(env, 'VRROOM_SYNC_ISSUERS'));
+    const origins = parseOrigins(value(env, 'VRROOM_SYNC_ORIGINS'), issuers);
 
-    const logLevel = value(env, 'MAVR_SYNC_LOG_LEVEL') || 'info';
+    const logLevel = value(env, 'VRROOM_SYNC_LOG_LEVEL') || 'info';
     if (!['error', 'warn', 'info', 'debug'].includes(logLevel)) {
-        throw new ConfigError('MAVR_SYNC_LOG_LEVEL');
+        throw new ConfigError('VRROOM_SYNC_LOG_LEVEL');
     }
 
     const livekiturl = value(env, 'LIVEKIT_API_URL');
@@ -250,14 +250,14 @@ export const loadConfig = (env = process.env) => {
         secret,
         issuers,
         origins,
-        maxRoomPeers: integer(env, 'MAVR_SYNC_MAX_ROOM_PEERS', 50, 2, 100),
-        maxRooms: integer(env, 'MAVR_SYNC_MAX_ROOMS', 1000, 1, 1000000),
-        maxConnections: integer(env, 'MAVR_SYNC_MAX_CONNECTIONS', 2000, 1, 1000000),
-        maxPending: integer(env, 'MAVR_SYNC_MAX_PENDING', 200, 1, 1000000),
-        poseHz: integer(env, 'MAVR_SYNC_POSE_HZ', 15, 1, 30),
-        graceSeconds: integer(env, 'MAVR_SYNC_GRACE_SECONDS', 10, 0, 60),
+        maxRoomPeers: integer(env, 'VRROOM_SYNC_MAX_ROOM_PEERS', 50, 2, 100),
+        maxRooms: integer(env, 'VRROOM_SYNC_MAX_ROOMS', 1000, 1, 1000000),
+        maxConnections: integer(env, 'VRROOM_SYNC_MAX_CONNECTIONS', 2000, 1, 1000000),
+        maxPending: integer(env, 'VRROOM_SYNC_MAX_PENDING', 200, 1, 1000000),
+        poseHz: integer(env, 'VRROOM_SYNC_POSE_HZ', 15, 1, 30),
+        graceSeconds: integer(env, 'VRROOM_SYNC_GRACE_SECONDS', 10, 0, 60),
         logLevel,
-        extensions: parseExtensions(value(env, 'MAVR_SYNC_EXTENSIONS')),
+        extensions: parseExtensions(value(env, 'VRROOM_SYNC_EXTENSIONS')),
         livekit: {
             url: stripSlashes(livekiturl),
             key: livekitkey,

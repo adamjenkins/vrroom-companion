@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: client frame parsing, server frame builders, the codec copy.
+// vrroom-sync tests: client frame parsing, server frame builders, the codec copy.
 
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
@@ -94,7 +94,7 @@ test('server frame builders', () => {
 });
 
 test('constants match the contract', () => {
-    assert.equal(Protocol.SUBPROTOCOL, 'mavr-sync.1');
+    assert.equal(Protocol.SUBPROTOCOL, 'vrroom-sync.1');
     assert.equal(Protocol.MAX_FRAME, 4096);
     assert.deepEqual({...Protocol.CLOSE}, {
         NORMAL: 1000, GOING_AWAY: 1001, TOO_BIG: 1009, PROTOCOL: 4000, HELLO_TIMEOUT: 4001, SLOW: 4008,
@@ -103,14 +103,14 @@ test('constants match the contract', () => {
 });
 
 test('the codec copy is identical to the Phase 3 codec (when the plugin repo is next to this one)', (t) => {
-    const original = fileURLToPath(new URL('../../../moodle-mod_mavr/runtime/builtin/amd/src/live/codec.js', import.meta.url));
+    const original = fileURLToPath(new URL('../../../moodle-mod_vrroom/runtime/builtin/amd/src/live/codec.js', import.meta.url));
     if (!existsSync(original)) {
-        t.skip('moodle-mod_mavr is not checked out next to mavr-companion');
+        t.skip('moodle-mod_vrroom is not checked out next to vrroom-companion');
         return;
     }
     const copy = readFileSync(new URL('../src/codec.js', import.meta.url), 'utf8');
     const lines = copy.split('\n');
-    assert.match(lines[0], /^\/\/ Copied verbatim from moodle-mod_mavr /);
+    assert.match(lines[0], /^\/\/ Copied verbatim from moodle-mod_vrroom /);
     assert.match(lines[1], /^\/\/ Keep both copies identical/);
     assert.equal(lines[2], '// SPDX-License-Identifier: GPL-3.0-or-later');
     assert.equal(lines.slice(3).join('\n'), readFileSync(original, 'utf8'));

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: LiveKit RemoveParticipant against a fake local Twirp server.
+// vrroom-sync tests: LiveKit RemoveParticipant against a fake local Twirp server.
 
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';

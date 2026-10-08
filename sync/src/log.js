@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: JSON-lines logger that drops anything that could be personal data.
+// vrroom-sync: JSON-lines logger that drops anything that could be personal data.
 
 /**
  * Log levels, most severe first.

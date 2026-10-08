@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: the admin challenge (GET /v1/challenge) proving that this service holds the shared secret.
+// vrroom-sync: the admin challenge (GET /v1/challenge) proving that this service holds the shared secret.
 
 import {createHmac} from 'node:crypto';
 import {verify} from './jwt.js';
@@ -8,7 +8,7 @@ import {PROTOCOL_VERSION, SERVER_VERSION} from './protocol.js';
 import {CHALLENGE_LIMIT, createBucket} from './ratelimit.js';
 
 /** First line of the MAC input; versioned so that the format can change safely. */
-export const CHALLENGE_PREFIX = 'mavr-sync/challenge/1';
+export const CHALLENGE_PREFIX = 'vrroom-sync/challenge/1';
 
 /** Bearer token shape. */
 const BEARER = /^Bearer ([A-Za-z0-9._-]{1,3000})$/;
@@ -58,7 +58,7 @@ export const createChallengeHandler = (config, options = {}) => {
         return {
             status: 200,
             body: {
-                service: 'mavr-sync',
+                service: 'vrroom-sync',
                 protocol: PROTOCOL_VERSION,
                 version: SERVER_VERSION,
                 nonce,

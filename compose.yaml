@@ -1,27 +1,27 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Adam Jenkins <adam@wisecat.net>
-# MAVR companion stack (mavr-sync + LiveKit) for `podman compose` (primary) and `docker compose`.
+# VR room companion stack (vrroom-sync + LiveKit) for `podman compose` (primary) and `docker compose`.
 #
 # Before the first start:
 #   scripts/gen-secrets.sh            (writes .env with fresh secrets)
-#   edit .env                         (MAVR_SYNC_ISSUERS, LIVEKIT_NODE_IP)
+#   edit .env                         (VRROOM_SYNC_ISSUERS, LIVEKIT_NODE_IP)
 #   scripts/render-livekit-config.sh  (writes livekit/livekit.yaml from .env)
 # Then: podman compose up -d --build   (or: docker compose up -d --build)
 #
-# Both services use host networking: mavr-sync listens on MAVR_SYNC_LISTEN (default
+# Both services use host networking: vrroom-sync listens on VRROOM_SYNC_LISTEN (default
 # 127.0.0.1:8090) and LiveKit on 7880 (signalling, put it behind the reverse proxy), 7881/tcp and
 # the UDP range of .env. Nothing is published with `ports:` because host networking needs none.
 # The health check (sync/src/healthcheck.js, a file because podman-compose re-quotes inline code)
-# reads the port from MAVR_SYNC_LISTEN inside the container; it connects to
+# reads the port from VRROOM_SYNC_LISTEN inside the container; it connects to
 # 127.0.0.1, so keep the listen address 127.0.0.1 or 0.0.0.0.
-name: mavr-companion
+name: vrroom-companion
 
 services:
-  mavr-sync:
+  vrroom-sync:
     build:
       context: ./sync
       dockerfile: Containerfile
-    image: localhost/mavr-sync:0.1.0
+    image: localhost/vrroom-sync:0.1.0
     network_mode: host
     env_file: .env
     read_only: true
@@ -38,7 +38,7 @@ services:
 
   livekit:
     # Apache-2.0 LiveKit server image, pulled from Docker Hub (not part of this repository).
-    # Change the tag in .env (LIVEKIT_TAG) and in quadlet/mavr-livekit.container together.
+    # Change the tag in .env (LIVEKIT_TAG) and in quadlet/vrroom-livekit.container together.
     image: docker.io/livekit/livekit-server:${LIVEKIT_TAG:-v1.13.9}
     network_mode: host
     command: ["--config", "/etc/livekit.yaml"]

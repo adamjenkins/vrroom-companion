@@ -6,13 +6,13 @@
 # Usage: scripts/gen-secrets.sh [--force] [--podman-secrets] [--show]
 #
 #   (no option)       Create .env from .env.example when it does not exist, and fill every
-#                     EMPTY secret (MAVR_SYNC_SECRET, LIVEKIT_API_KEY, LIVEKIT_API_SECRET).
+#                     EMPTY secret (VRROOM_SYNC_SECRET, LIVEKIT_API_KEY, LIVEKIT_API_SECRET).
 #                     A secret that already has a value is never replaced.
 #   --force           Replace the three secrets in .env even when they have values. Every other
 #                     line of .env is kept. (Moodle must then get the new values.)
-#   --podman-secrets  Also create the Podman secrets mavr_sync_secret, mavr_livekit_api_key and
-#                     mavr_livekit_api_secret from .env, and write the non-secret settings to
-#                     ~/.config/mavr-companion/mavr-sync.env (for the Quadlet units). Run it again
+#   --podman-secrets  Also create the Podman secrets vrroom_sync_secret, vrroom_livekit_api_key and
+#                     vrroom_livekit_api_secret from .env, and write the non-secret settings to
+#                     ~/.config/vrroom-companion/vrroom-sync.env (for the Quadlet units). Run it again
 #                     after every change to .env.
 #   --show            Print the secret values (to copy them into Moodle). Off by default.
 #
@@ -22,8 +22,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT}/.env"
 EXAMPLE_FILE="${ROOT}/.env.example"
-QUADLET_DIR="${HOME}/.config/mavr-companion"
-QUADLET_ENV="${QUADLET_DIR}/mavr-sync.env"
+QUADLET_DIR="${HOME}/.config/vrroom-companion"
+QUADLET_ENV="${QUADLET_DIR}/vrroom-sync.env"
 
 FORCE=0
 PODMAN_SECRETS=0
@@ -138,7 +138,7 @@ livekit_key() {
     printf 'API%s' "$(random_alnum 12)"
 }
 
-fill_secret MAVR_SYNC_SECRET random_hex 32
+fill_secret VRROOM_SYNC_SECRET random_hex 32
 fill_secret LIVEKIT_API_KEY livekit_key
 fill_secret LIVEKIT_API_SECRET random_alnum 48
 
@@ -148,14 +148,14 @@ else
     printf 'The secrets in .env are already set (use --force to replace them).\n'
 fi
 
-SYNC_SECRET="$(env_get "${ENV_FILE}" MAVR_SYNC_SECRET || true)"
+SYNC_SECRET="$(env_get "${ENV_FILE}" VRROOM_SYNC_SECRET || true)"
 LK_KEY="$(env_get "${ENV_FILE}" LIVEKIT_API_KEY || true)"
 LK_SECRET="$(env_get "${ENV_FILE}" LIVEKIT_API_SECRET || true)"
-ISSUERS="$(env_get "${ENV_FILE}" MAVR_SYNC_ISSUERS || true)"
+ISSUERS="$(env_get "${ENV_FILE}" VRROOM_SYNC_ISSUERS || true)"
 
 # Check values someone may have typed in by hand.
 if [[ ${#SYNC_SECRET} -lt 32 || "${SYNC_SECRET}" =~ [[:space:]] ]]; then
-    die "MAVR_SYNC_SECRET in .env must be at least 32 characters with no spaces"
+    die "VRROOM_SYNC_SECRET in .env must be at least 32 characters with no spaces"
 fi
 if [[ ! "${LK_KEY}" =~ ^[A-Za-z0-9_-]+$ ]]; then
     die "LIVEKIT_API_KEY in .env must contain only letters, digits, '_' and '-'"
@@ -177,23 +177,23 @@ if [[ ${PODMAN_SECRETS} -eq 1 ]]; then
         fi
         printf 'Podman secret %s set.\n' "${name}"
     }
-    put_secret mavr_sync_secret "${SYNC_SECRET}"
-    put_secret mavr_livekit_api_key "${LK_KEY}"
-    put_secret mavr_livekit_api_secret "${LK_SECRET}"
+    put_secret vrroom_sync_secret "${SYNC_SECRET}"
+    put_secret vrroom_livekit_api_key "${LK_KEY}"
+    put_secret vrroom_livekit_api_secret "${LK_SECRET}"
 
-    # Non-secret settings for the Quadlet unit: every active MAVR_SYNC_* line except the secret,
+    # Non-secret settings for the Quadlet unit: every active VRROOM_SYNC_* line except the secret,
     # plus LIVEKIT_API_URL.
     mkdir -p "${QUADLET_DIR}"
     chmod 700 "${QUADLET_DIR}"
     tmp="$(mktemp "${QUADLET_ENV}.XXXXXX")"
     {
-        printf '# Written by mavr-companion/scripts/gen-secrets.sh --podman-secrets from %s.\n' "${ENV_FILE}"
+        printf '# Written by vrroom-companion/scripts/gen-secrets.sh --podman-secrets from %s.\n' "${ENV_FILE}"
         printf '# Edit .env and run the script again instead of editing this file.\n'
         while IFS= read -r line || [[ -n "${line}" ]]; do
             line="${line%$'\r'}"
             case "${line}" in
-                MAVR_SYNC_SECRET=*) ;;
-                MAVR_SYNC_*=*|LIVEKIT_API_URL=*) printf '%s\n' "${line}" ;;
+                VRROOM_SYNC_SECRET=*) ;;
+                VRROOM_SYNC_*=*|LIVEKIT_API_URL=*) printf '%s\n' "${line}" ;;
             esac
         done < "${ENV_FILE}"
     } > "${tmp}"
@@ -203,29 +203,29 @@ if [[ ${PODMAN_SECRETS} -eq 1 ]]; then
 fi
 
 if [[ "${ISSUERS}" == *"moodle.example.org"* || -z "${ISSUERS}" ]]; then
-    printf '\nWARNING: MAVR_SYNC_ISSUERS in .env is still the example. Set it to your Moodle wwwroot.\n'
+    printf '\nWARNING: VRROOM_SYNC_ISSUERS in .env is still the example. Set it to your Moodle wwwroot.\n'
     if [[ ${PODMAN_SECRETS} -eq 1 ]]; then
         printf 'Then run scripts/gen-secrets.sh --podman-secrets again.\n'
     fi
 fi
 
 if [[ ${SHOW} -eq 1 ]]; then
-    printf '\nMAVR_SYNC_SECRET=%s\nLIVEKIT_API_KEY=%s\nLIVEKIT_API_SECRET=%s\n' \
+    printf '\nVRROOM_SYNC_SECRET=%s\nLIVEKIT_API_KEY=%s\nLIVEKIT_API_SECRET=%s\n' \
         "${SYNC_SECRET}" "${LK_KEY}" "${LK_SECRET}"
 fi
 
 cat <<EOF
 
 Next steps:
-  1. Edit ${ENV_FILE}: MAVR_SYNC_ISSUERS (your Moodle wwwroot) and LIVEKIT_NODE_IP.
+  1. Edit ${ENV_FILE}: VRROOM_SYNC_ISSUERS (your Moodle wwwroot) and LIVEKIT_NODE_IP.
   2. scripts/render-livekit-config.sh   (add --quadlet for the Quadlet install)
   3. Start the stack (README: Quadlet, podman compose or docker compose).
-  4. In Moodle, Site administration > Plugins > Activity modules > MAVR > Companion service:
+  4. In Moodle, Site administration > Plugins > Activity modules > VR room > Companion service:
        Companion address   (url)            https://companion.example.org
-       Shared secret       (secret)         the MAVR_SYNC_SECRET value of .env
+       Shared secret       (secret)         the VRROOM_SYNC_SECRET value of .env
        LiveKit address     (livekiturl)     wss://livekit.example.org
        LiveKit API key     (livekitkey)     the LIVEKIT_API_KEY value of .env
        LiveKit API secret  (livekitsecret)  the LIVEKIT_API_SECRET value of .env
      then press "Test the companion connection".
-  The secrets are in .env (mode 600); print them with --show, or: grep -E '^(MAVR_SYNC_SECRET|LIVEKIT_API_(KEY|SECRET))=' .env
+  The secrets are in .env (mode 600); print them with --show, or: grep -E '^(VRROOM_SYNC_SECRET|LIVEKIT_API_(KEY|SECRET))=' .env
 EOF

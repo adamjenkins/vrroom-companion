@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Adam Jenkins <adam@wisecat.net>
+# Rootless Podman Quadlet unit for vrroom-sync (copy to ~/.config/containers/systemd/).
+#
+# Needs: the image localhost/vrroom-sync:0.1.0 (podman build -t localhost/vrroom-sync:0.1.0 sync),
+# the Podman secrets vrroom_sync_secret, vrroom_livekit_api_key and vrroom_livekit_api_secret, and
+# ~/.config/vrroom-companion/vrroom-sync.env (both made by scripts/gen-secrets.sh --podman-secrets).
+# The health check connects to 127.0.0.1 on the port of VRROOM_SYNC_LISTEN, so keep the listen
+# address 127.0.0.1 or 0.0.0.0. Podman 4.6 or later.
+
+[Unit]
+Description=VR room companion: room sync service
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=localhost/vrroom-sync:0.1.0
+ContainerName=vrroom-sync
+Network=host
+EnvironmentFile=%h/.config/vrroom-companion/vrroom-sync.env
+Secret=vrroom_sync_secret,type=env,target=VRROOM_SYNC_SECRET
+Secret=vrroom_livekit_api_key,type=env,target=LIVEKIT_API_KEY
+Secret=vrroom_livekit_api_secret,type=env,target=LIVEKIT_API_SECRET
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+HealthCmd=node /app/src/healthcheck.js
+HealthInterval=30s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

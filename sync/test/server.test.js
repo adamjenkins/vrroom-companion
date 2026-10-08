@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: the HTTP + WebSocket server end to end on an ephemeral 127.0.0.1 port.
+// vrroom-sync tests: the HTTP + WebSocket server end to end on an ephemeral 127.0.0.1 port.
 
 import assert from 'node:assert/strict';
 import {after, before, describe, test} from 'node:test';
@@ -19,7 +19,7 @@ describe('HTTP', () => {
     test('GET /healthz answers ok, not cached, no CORS', async () => {
         const response = await fetch(server.http + '/healthz');
         assert.equal(response.status, 200);
-        assert.deepEqual(await response.json(), {status: 'ok', service: 'mavr-sync', protocol: 1});
+        assert.deepEqual(await response.json(), {status: 'ok', service: 'vrroom-sync', protocol: 1});
         assert.equal(response.headers.get('cache-control'), 'no-store');
         assert.match(response.headers.get('content-type'), /^application\/json/);
         assert.equal(response.headers.get('access-control-allow-origin'), null);
@@ -54,13 +54,13 @@ describe('upgrade checks', () => {
 
     test('a missing or other subprotocol gets 400', async () => {
         await assert.rejects(connect(server.url, {protocol: null}), (error) => error.status === 400);
-        await assert.rejects(connect(server.url, {protocol: 'mavr-sync.2'}), (error) => error.status === 400);
+        await assert.rejects(connect(server.url, {protocol: 'vrroom-sync.2'}), (error) => error.status === 400);
     });
 
     test('a foreign origin gets 403; the issuer origin and no origin are accepted', async () => {
         await assert.rejects(connect(server.url, {origin: 'https://evil.example.com'}), (error) => error.status === 403);
         const good = await connect(server.url, {origin: ORIGIN});
-        assert.equal(good.ws.protocol, 'mavr-sync.1');
+        assert.equal(good.ws.protocol, 'vrroom-sync.1');
         good.close();
         const none = await connect(server.url);
         none.close();
@@ -94,7 +94,7 @@ describe('hello', () => {
             'junk',
             makeToken({exp: now - 1, iat: now - 100, nbf: now - 100}, {now}),
             makeToken({}, {now, secret: 'a-different-secret-0123456789abcdef0123'}),
-            makeToken({mavr: 'observe'}, {now}),
+            makeToken({vrroom: 'observe'}, {now}),
         ]) {
             const client = await connect(server.url);
             client.send({t: 'hello', token});
@@ -237,7 +237,7 @@ describe('expiry and grace', () => {
     let clock;
     before(async () => {
         clock = createClock();
-        server = await startServer({MAVR_SYNC_GRACE_SECONDS: '10'}, {now: clock.now});
+        server = await startServer({VRROOM_SYNC_GRACE_SECONDS: '10'}, {now: clock.now});
     });
     after(() => server.close());
 

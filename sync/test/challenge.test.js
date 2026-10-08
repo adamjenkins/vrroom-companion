@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: GET /v1/challenge — the MAC Moodle recomputes, refusals and the rate limit.
+// vrroom-sync tests: GET /v1/challenge — the MAC Moodle recomputes, refusals and the rate limit.
 
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
@@ -17,7 +17,7 @@ import {ISSUER, SECRET, makeTestToken, makeToken, seconds, startServer} from './
  * @returns {string}
  */
 const moodleMac = (nonce, iss, ts) =>
-    createHmac('sha256', SECRET).update('mavr-sync/challenge/1\n' + nonce + '\n' + iss + '\n' + ts).digest('hex');
+    createHmac('sha256', SECRET).update('vrroom-sync/challenge/1\n' + nonce + '\n' + iss + '\n' + ts).digest('hex');
 
 describe('challenge over HTTP', () => {
     let server;
@@ -45,7 +45,7 @@ describe('challenge over HTTP', () => {
         const {status, body, headers} = await ask(makeTestToken({nonce}));
         assert.equal(status, 200);
         assert.equal(headers.get('cache-control'), 'no-store');
-        assert.equal(body.service, 'mavr-sync');
+        assert.equal(body.service, 'vrroom-sync');
         assert.equal(body.protocol, 1);
         assert.equal(body.version, '0.1.0');
         assert.equal(body.nonce, nonce);
@@ -96,7 +96,7 @@ describe('challenge over HTTP', () => {
 
 test('challengeMac matches an independent HMAC and depends on every input', () => {
     const mac = challengeMac(SECRET, 'a'.repeat(32), ISSUER, 1760000000);
-    assert.equal(CHALLENGE_PREFIX, 'mavr-sync/challenge/1');
+    assert.equal(CHALLENGE_PREFIX, 'vrroom-sync/challenge/1');
     assert.equal(mac, moodleMac('a'.repeat(32), ISSUER, 1760000000));
     assert.notEqual(mac, challengeMac(SECRET, 'b'.repeat(32), ISSUER, 1760000000));
     assert.notEqual(mac, challengeMac(SECRET, 'a'.repeat(32), ISSUER + '/x', 1760000000));

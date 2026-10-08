@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync tests: the Phase 5 extension point — hooks, isolation, routes, loading, 'observe' refused.
+// vrroom-sync tests: the Phase 5 extension point — hooks, isolation, routes, loading, 'observe' refused.
 
 import assert from 'node:assert/strict';
 import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
@@ -116,7 +116,7 @@ test('routes under /v1/ext/<name>/<subpath>', async () => {
 });
 
 test('load() imports modules from files and refuses broken ones', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'mavr-sync-ext-'));
+    const dir = mkdtempSync(path.join(tmpdir(), 'vrroom-sync-ext-'));
     try {
         const good = path.join(dir, 'good.mjs');
         writeFileSync(good, "export default {name: 'good', hooks: {roomOpened() {}}};\n");
@@ -136,7 +136,7 @@ test("the reserved token purpose 'observe' is refused on /sync", async () => {
     const server = await startServer();
     try {
         const client = await connect(server.url);
-        client.send({t: 'hello', token: makeToken({mavr: 'observe'})});
+        client.send({t: 'hello', token: makeToken({vrroom: 'observe'})});
         assert.equal((await client.closed).code, 4401);
     } finally {
         await server.close();

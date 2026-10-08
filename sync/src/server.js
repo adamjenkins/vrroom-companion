@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: entry point — HTTP routes, WebSocket upgrade on /sync, timers and graceful shutdown.
+// vrroom-sync: entry point — HTTP routes, WebSocket upgrade on /sync, timers and graceful shutdown.
 
 import http from 'node:http';
 import {pathToFileURL} from 'node:url';
@@ -133,7 +133,7 @@ export const createServer = (config, options = {}) => {
     const onRequest = (req, res) => {
         const pathname = pathOf(req);
         if (req.method === 'GET' && pathname === '/healthz') {
-            sendJson(res, 200, {status: 'ok', service: 'mavr-sync', protocol: PROTOCOL_VERSION});
+            sendJson(res, 200, {status: 'ok', service: 'vrroom-sync', protocol: PROTOCOL_VERSION});
             return;
         }
         if (req.method === 'GET' && pathname === '/v1/challenge') {

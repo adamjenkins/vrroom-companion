@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2024 LiveKit, Inc.
 // Copyright 2026 Adam Jenkins <adam@wisecat.net>
-// mavr-sync: optional removal of a participant from the LiveKit room when they leave the sync room.
+// vrroom-sync: optional removal of a participant from the LiveKit room when they leave the sync room.
 //
 // The Twirp request (POST /twirp/livekit.RoomService/RemoveParticipant, JSON body {room, identity})
 // and the admin grant {roomAdmin: true, room} mirror livekit-server-sdk 2.19.1

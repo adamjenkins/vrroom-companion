@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Adam Jenkins <adam@wisecat.net>
-# Example nginx reverse proxy for the MAVR companion stack: TLS for mavr-sync and LiveKit.
+# Example nginx reverse proxy for the VR room companion stack: TLS for vrroom-sync and LiveKit.
 #
 # Two public names, each with a browser-trusted certificate:
-#   companion.example.org -> mavr-sync on 127.0.0.1:8090 (/sync WebSocket, /healthz, /v1/...)
+#   companion.example.org -> vrroom-sync on 127.0.0.1:8090 (/sync WebSocket, /healthz, /v1/...)
 #   livekit.example.org   -> LiveKit signalling on 127.0.0.1:7880 (WebSocket)
 # Voice itself does not pass through nginx: browsers send it to LiveKit's UDP range (or 7881/tcp)
 # directly, so open those ports in the firewall (README, "Ports and firewall").
 #
-# Put this in the http {} context (for example /etc/nginx/conf.d/mavr-companion.conf), replace
+# Put this in the http {} context (for example /etc/nginx/conf.d/vrroom-companion.conf), replace
 # the names and certificate paths, then: nginx -t && systemctl reload nginx
 #
 # Privacy: no token is ever sent in a URL (the browser sends it inside the WebSocket), but the
@@ -35,7 +35,7 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
         proxy_set_header Host $host;
-        # mavr-sync pings every 15 seconds, so 120 seconds is plenty.
+        # vrroom-sync pings every 15 seconds, so 120 seconds is plenty.
         proxy_read_timeout 120s;
         proxy_send_timeout 120s;
     }

@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Adam Jenkins <adam@wisecat.net>
-# Image of the mavr-sync room sync service (build: podman build -t localhost/mavr-sync:0.1.0 sync).
+# Image of the vrroom-sync room sync service (build: podman build -t localhost/vrroom-sync:0.1.0 sync).
 ARG NODE_IMAGE=docker.io/library/node:22-alpine
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 FROM ${NODE_IMAGE}
-LABEL org.opencontainers.image.title="mavr-sync" org.opencontainers.image.version="0.1.0" \
+LABEL org.opencontainers.image.title="vrroom-sync" org.opencontainers.image.version="0.1.0" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 ENV NODE_ENV=production
 WORKDIR /app
